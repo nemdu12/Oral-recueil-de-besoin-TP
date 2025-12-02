@@ -33,9 +33,11 @@ function login() {
     const mdp = document.getElementById("password").value;
 
     // Identifiants : admin / 1259 (obfusqués)
+    // C'est le correctif de la syntaxe HTML qui avait été la source du problème.
     const correctPass = String.fromCharCode(49, 50, 53, 57); 
 
     if (user === "admin" && mdp === correctPass) {
+        // Enregistre une clé temporaire pour prouver que la connexion a eu lieu
         sessionStorage.setItem('isAdmin', 'true'); 
         window.location.href = "admin.html";
     } else {
