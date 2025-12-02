@@ -1,12 +1,20 @@
-// --- DÉBUT DU CONTENU DU FICHIER logic.js ---
+// --- DÉBUT DU CONTENU DU FICHIER logic.js (Final avec variables globales exposées) ---
 
-// 1. CONFIGURATION ET CLÉS SUPABASE (Déplacées ici)
-// NOTE : Ces variables seront lues dans l'événement DOMContentLoaded.
+// 1. CONFIGURATION ET CLÉS SUPABASE 
 const SUPABASE_URL = 'https://qokkovegsxandxycmfru.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
 
-// Déclare la variable globalement (sera initialisée dans DOMContentLoaded)
+// Déclaration de variables de l'application rendues Globales pour être accessibles
+// par les fonctions onclick (définies sur window).
 let supabase; 
+let slideDefinitions = [];
+let currentSlide = 0;
+let currentResponseIndex = {};
+let rawData = {}; 
+
+const zones = [1, 2];
+const questions = ["q1","q2","q3","q4"];
+const TRANSITION_DURATION_MS = 500; 
 
 
 // -----------------------------------------------------------------
@@ -15,9 +23,8 @@ let supabase;
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- INITIALISATION CRITIQUE DE SUPABASE (La correction) ---
+    // --- INITIALISATION CRITIQUE DE SUPABASE ---
     if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
-        // CORRECTION : Assigne le client à la variable 'supabase' déjà déclarée (let supabase;)
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
     } else {
         document.getElementById("diapo-content").innerHTML = `<div class="slide-item"><h1>ERREUR FATALE: Librairie Supabase introuvable.</h1><p>Vérifiez votre connexion et le lien CDN dans admin.html.</p></div>`;
@@ -31,32 +38,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     sessionStorage.removeItem('isAdmin'); 
 
-    // --- VARIABLES GLOBALES ---
-    const zones = [1, 2];
-    const questions = ["q1","q2","q3","q4"];
-    const TRANSITION_DURATION_MS = 500; 
+    // --- FONCTIONS INTERNES (ne sont pas appelées par onclick) ---
 
-    let slideDefinitions = [];
-    let currentSlide = 0;
-    let currentResponseIndex = {};
-    let rawData = {}; 
+    function displayCurrentSlide() {
+        const contentContainer = document.getElementById("diapo-content");
+        
+        if (slideDefinitions.length === 0) {
+            contentContainer.innerHTML = `<div class="slide-item"><h1>[Aucune donnée disponible]</h1></div>`;
+            return;
+        }
+        
+        contentContainer.style.opacity = 0; 
+        
+        setTimeout(() => {
+            contentContainer.innerHTML = generateSlideHTML(slideDefinitions[currentSlide]);
+            contentContainer.style.opacity = 1;
 
-    // --- FONCTIONS ESSENTIELLES ---
-
-    window.toggleFullscreen = function() {
-    const elem = document.documentElement; 
-    if (!document.fullscreenElement) elem.requestFullscreen();
-    else document.exitFullscreen();
+        }, TRANSITION_DURATION_MS); 
     }
 
-    /**
-     * Récupère les données brutes de la BD Supabase et remplit le tableau 'slideDefinitions'.
-     */
+    function navigateSlide(direction) {
+        if (slideDefinitions.length === 0) return;
+        
+        currentSlide = (currentSlide + direction + slideDefinitions.length) % slideDefinitions.length;
+        displayCurrentSlide();
+    }
+
+
     async function generateSlideDefinitions() {
         slideDefinitions = []; 
         rawData = {}; 
 
-        // 1. Requête Supabase
         const { data: responses, error } = await supabase
             .from('reponses')
             .select('zone, question, reponse')
@@ -68,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // 2. Traitement des données pour reconstruire le format 'rawData'
         const groupedResponses = responses.reduce((acc, row) => {
             const key = `${row.zone}_${row.question}`;
             if (!acc[key]) acc[key] = [];
@@ -77,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, {});
 
 
-        // 3. Remplissage des 'slideDefinitions'
         zones.forEach(zone => {
             slideDefinitions.push({ type: 'separator', id: `sep_${zone}`, zone: zone });
 
@@ -101,9 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Génère le HTML pour la slide actuellement définie.
-     */
     function generateSlideHTML(slideDef) {
         const { type, id, zone, question } = slideDef;
         
@@ -124,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <hr style="color: #fff;">
             `;
             
-            // --- AFFICHAGE DE LA RÉPONSE EN COURS SEULEMENT ---
             if (currentIdx > 0 && responseToShowIndex < totalResponses) {
                 content += `<p style="font-weight: bold; color: #fff;">
                                 ${currentIdx.toLocaleString()}. ${data[responseToShowIndex]}
@@ -141,14 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             content += `</div>`;
             
-            // --- BOUTONS D'ACTION SUR LA DIAPO ---
             content += `<div style="margin-top: 30px;">`;
 
             if (currentIdx > 1) {
+                // Appel à la fonction globale
                 content += `<button class="btn btn-warning me-3" onclick="handleResponseNavigation('${key}', -1)">Réponse Précédente</button>`;
             }
             
             if (currentIdx < totalResponses) {
+                // Appel à la fonction globale
                 content += `<button class="btn btn-success" onclick="handleResponseNavigation('${key}', 1)">Afficher Réponse ${currentIdx + 1}/${totalResponses}</button>`;
             } else {
                 content += `<p class="text-success mt-2" style="font-weight: bold;">Toutes les ${totalResponses} réponses affichées.</p>`;
@@ -162,61 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="slide-item"><h1>Erreur de type de slide.</h1></div>`;
     }
 
-    /**
-     * Affiche la slide à l'index 'currentSlide' en générant son HTML.
-     */
-    function displayCurrentSlide() {
-        const contentContainer = document.getElementById("diapo-content");
-        
-        if (slideDefinitions.length === 0) {
-            contentContainer.innerHTML = `<div class="slide-item"><h1>[Aucune donnée disponible]</h1></div>`;
-            return;
-        }
-        
-        contentContainer.style.opacity = 0; 
-        
-        setTimeout(() => {
-            contentContainer.innerHTML = generateSlideHTML(slideDefinitions[currentSlide]);
-            contentContainer.style.opacity = 1;
-
-        }, TRANSITION_DURATION_MS); 
-    }
-
-    /**
-     * Gère le défilement des index de réponses sur la diapositive actuelle.
-     */
-    function handleResponseNavigation(key, direction) {
-        if (currentResponseIndex[key] === undefined) return;
-        
-        const totalResponses = rawData[key].length;
-        let newIndex = currentResponseIndex[key] + direction;
-
-        if (newIndex >= 0 && newIndex <= totalResponses) {
-            currentResponseIndex[key] = newIndex;
-            displayCurrentSlide();
-        }
-    }
-
-    /**
-     * Gère le défilement des slides (manuellement).
-     */
-    function navigateSlide(direction) {
-        if (slideDefinitions.length === 0) return;
-        
-        currentSlide = (currentSlide + direction + slideDefinitions.length) % slideDefinitions.length;
-        displayCurrentSlide();
-    }
-
-    /**
-     * Fonction appelée par les boutons de navigation externes.
-     */
-    window.handleManualNavigation = async function(direction) {
-    await generateSlideDefinitions(); 
-    navigateSlide(direction);
-    }
-
-    // --- INITIALISATION DE L'APPLICATION (Appelée à la fin de DOMContentLoaded) ---
-
+    // --- INITIALISATION DE L'APPLICATION ---
     async function initializeAdmin() {
         await generateSlideDefinitions(); 
         displayCurrentSlide();
@@ -225,3 +178,64 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeAdmin();
 
 }); // <-- FIN DU document.addEventListener('DOMContentLoaded')
+
+
+// -----------------------------------------------------------------
+// 3. EXPOSITION GLOBALE DES FONCTIONS APPELEES PAR ONCLICK DU HTML
+// Ces fonctions sont appelées par onclick et accèdent aux variables globales (définies en let/var en haut)
+// -----------------------------------------------------------------
+
+/**
+ * Rendre la fonction de plein écran globale.
+ */
+window.toggleFullscreen = function() {
+    const elem = document.documentElement; 
+    if (!document.fullscreenElement) elem.requestFullscreen();
+    else document.exitFullscreen();
+}
+
+/**
+ * Rendre la fonction de navigation principale globale.
+ */
+window.handleManualNavigation = async function(direction) {
+    // Utilise les variables globales (slideDefinitions, currentSlide)
+    await generateSlideDefinitions(); 
+    if (slideDefinitions.length === 0) return;
+        
+    currentSlide = (currentSlide + direction + slideDefinitions.length) % slideDefinitions.length;
+    
+    // Le code suivant doit être refait ici pour fonctionner globalement
+    const contentContainer = document.getElementById("diapo-content");
+    contentContainer.style.opacity = 0; 
+    
+    setTimeout(() => {
+        contentContainer.innerHTML = window.generateSlideHTML(slideDefinitions[currentSlide]);
+        contentContainer.style.opacity = 1;
+
+    }, TRANSITION_DURATION_MS); 
+}
+
+/**
+ * Rendre la fonction de navigation des réponses (le problème actuel) globale.
+ */
+window.handleResponseNavigation = function(key, direction) {
+    // Utilise les variables globales (currentResponseIndex, rawData)
+    if (currentResponseIndex[key] === undefined) return;
+    
+    const totalResponses = rawData[key].length;
+    let newIndex = currentResponseIndex[key] + direction;
+
+    if (newIndex >= 0 && newIndex <= totalResponses) {
+        currentResponseIndex[key] = newIndex;
+        
+        // Redéfinir la logique displayCurrentSlide ici pour qu'elle utilise les variables globales
+        const contentContainer = document.getElementById("diapo-content");
+        contentContainer.style.opacity = 0; 
+        
+        setTimeout(() => {
+            contentContainer.innerHTML = window.generateSlideHTML(slideDefinitions[currentSlide]);
+            contentContainer.style.opacity = 1;
+
+        }, TRANSITION_DURATION_MS); 
+    }
+}
