@@ -43,10 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FONCTIONS ESSENTIELLES ---
 
-    function toggleFullscreen() {
-        const elem = document.documentElement; 
-        if (!document.fullscreenElement) elem.requestFullscreen();
-        else document.exitFullscreen();
+    window.toggleFullscreen = function() {
+    const elem = document.documentElement; 
+    if (!document.fullscreenElement) elem.requestFullscreen();
+    else document.exitFullscreen();
     }
 
     /**
@@ -210,11 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Fonction appelée par les boutons de navigation externes.
      */
-    async function handleManualNavigation(direction) {
-        await generateSlideDefinitions(); 
-        navigateSlide(direction);
+    window.handleManualNavigation = async function(direction) {
+    await generateSlideDefinitions(); 
+    navigateSlide(direction);
     }
-
 
     // --- INITIALISATION DE L'APPLICATION (Appelée à la fin de DOMContentLoaded) ---
 
