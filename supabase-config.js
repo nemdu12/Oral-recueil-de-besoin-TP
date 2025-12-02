@@ -1,5 +1,5 @@
 // REMPLACEZ CES PLACEHOLDERS PAR VOS VRAIES CLÉS SUPABASE
-const SUPABASE_URL = 'VOTRE_URL_SUPABASE'; 
-const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON_PUBLIQUE'; 
+const SUPABASE_URL = 'https://supabase.com/dashboard/project/qokkovegsxandxycmfru'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
 
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
