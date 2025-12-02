@@ -7,19 +7,6 @@
     <title>Questionnaire</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    
-    <script>
-    // CONFIGURATION DE SUPABASE (fusionnée ici)
-    const SUPABASE_URL = 'VOTRE_URL_SUPABASE'; 
-    const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON_PUBLIQUE'; 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // LOGIQUE saveResponses
-    async function saveResponses(zone) {
-        // ... (Contenu de votre fonction saveResponses) ...
-        // (La fonction saveResponses est désormais exécutable car supabase est défini juste au-dessus)
-    }
-    </script>
 </head>
 <body>
 
@@ -87,9 +74,19 @@
 </div>
 
 <script>
-async function saveResponses(zone) {
-    if (typeof supabase === 'undefined') {
-        alert("Erreur: Le client Supabase n'est pas initialisé.");
+// Déclaration des clés Supabase (Ces lignes sont nécessaires car l'initialisation est synchrone ici)
+const SUPABASE_URL = 'VOTRE_URL_SUPABASE'; 
+const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON_PUBLIQUE'; 
+
+// Initialisation du client Supabase
+// Ceci doit être dans le même scope que la fonction saveResponses, 
+// mais après que le SDK ait été chargé (via l'attribut defer du head).
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Rendre la fonction globale (window.) pour qu'elle soit trouvée par les boutons onclick du HTML
+window.saveResponses = async function(zone) {
+    if (typeof supabase === 'undefined' || supabase === null) {
+        alert("Erreur: La connexion à la base de données n'est pas initialisée.");
         return;
     }
 
@@ -131,4 +128,3 @@ async function saveResponses(zone) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 </body>
 </html>
-
