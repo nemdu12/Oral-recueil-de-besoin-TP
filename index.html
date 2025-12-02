@@ -7,6 +7,66 @@
     <title>Questionnaire</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    
+    <script>
+    // --- Déclarations Globales (Doivent être lues en premier) ---
+    const SUPABASE_URL = 'VOTRE_URL_SUPABASE'; // Remplacer !
+    const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON_PUBLIQUE'; // Remplacer !
+    
+    // Déclaration de la variable supabase
+    let supabase;
+
+    // Initialisation du client Supabase (doit être appelée après le chargement du SDK)
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+             console.error("ERREUR: La librairie Supabase n'a pas chargé.");
+        }
+    });
+
+    // --- Fonction d'envoi (Rendue globale) ---
+    window.saveResponses = async function(zone) {
+        // Vérifie si l'initialisation a eu le temps de se terminer
+        if (typeof supabase === 'undefined' || supabase === null) {
+            alert("Erreur: La connexion à la base de données est en cours d'initialisation. Veuillez réessayer.");
+            return;
+        }
+
+        const form = document.getElementById(`form${zone}`);
+        let dataSaved = false;
+        let dataToSend = [];
+        
+        for (let element of form.elements) {
+            if (element.name && (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') && element.value.trim() !== "") {
+                
+                dataToSend.push({
+                    zone: zone,
+                    question: element.name,
+                    reponse: element.value.trim()
+                });
+                dataSaved = true;
+            }
+        }
+
+        if (!dataSaved) {
+            alert("Veuillez remplir au moins un champ avant d'envoyer.");
+            return;
+        }
+
+        const { error } = await supabase
+            .from('reponses')
+            .insert(dataToSend);
+
+        if (error) {
+            console.error('Erreur Supabase lors de l\'envoi :', error);
+            alert(`Erreur lors de l'enregistrement des réponses. (${error.message})`);
+        } else {
+            alert(`Réponses pour la Zone ${zone} enregistrées dans la base de données !`);
+            form.reset(); 
+        }
+    }
+    </script>
 </head>
 <body>
 
@@ -72,58 +132,6 @@
     </div>
 
 </div>
-
-<script>
-// Déclaration des clés Supabase (Ces lignes sont nécessaires car l'initialisation est synchrone ici)
-const SUPABASE_URL = 'VOTRE_URL_SUPABASE'; 
-const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON_PUBLIQUE'; 
-
-// Initialisation du client Supabase
-// Ceci doit être dans le même scope que la fonction saveResponses, 
-// mais après que le SDK ait été chargé (via l'attribut defer du head).
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Rendre la fonction globale (window.) pour qu'elle soit trouvée par les boutons onclick du HTML
-window.saveResponses = async function(zone) {
-    if (typeof supabase === 'undefined' || supabase === null) {
-        alert("Erreur: La connexion à la base de données n'est pas initialisée.");
-        return;
-    }
-
-    const form = document.getElementById(`form${zone}`);
-    let dataSaved = false;
-    let dataToSend = [];
-    
-    for (let element of form.elements) {
-        if (element.name && (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') && element.value.trim() !== "") {
-            
-            dataToSend.push({
-                zone: zone,
-                question: element.name,
-                reponse: element.value.trim()
-            });
-            dataSaved = true;
-        }
-    }
-
-    if (!dataSaved) {
-        alert("Veuillez remplir au moins un champ avant d'envoyer.");
-        return;
-    }
-
-    const { error } = await supabase
-        .from('reponses')
-        .insert(dataToSend);
-
-    if (error) {
-        console.error('Erreur Supabase lors de l\'envoi :', error);
-        alert(`Erreur lors de l'enregistrement des réponses. (${error.message})`);
-    } else {
-        alert(`Réponses pour la Zone ${zone} enregistrées dans la base de données !`);
-        form.reset(); 
-    }
-}
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 </body>
