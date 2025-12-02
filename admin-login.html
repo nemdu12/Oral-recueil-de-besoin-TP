@@ -14,11 +14,13 @@
 
         <div class="mb-3">
             <label class="form-label">Identifiant</label>
-            <input type="text" id="username" class="form-control" value="admin"> </div>
+            <input type="text" id="username" class="form-control" value="admin">
+        </div>
 
         <div class="mb-3">
             <label class="form-label">Mot de passe</label>
-            <input type="password" id="password" class="form-control" value="1259"> </div>
+            <input type="password" id="password" class="form-control" value="1259">
+        </div>
 
         <button class="btn btn-primary w-100" onclick="login()">Se connecter</button>
         <p id="error" class="text-danger text-center mt-2"></p>
@@ -30,12 +32,10 @@ function login() {
     const user = document.getElementById("username").value;
     const mdp = document.getElementById("password").value;
 
-    // Identifiants : admin / 1259
-    // Utilisation de String.fromCharCode pour "obfusquer" le mot de passe
+    // Identifiants : admin / 1259 (obfusqués)
     const correctPass = String.fromCharCode(49, 50, 53, 57); 
 
     if (user === "admin" && mdp === correctPass) {
-        // Enregistre une clé temporaire pour prouver que la connexion a eu lieu
         sessionStorage.setItem('isAdmin', 'true'); 
         window.location.href = "admin.html";
     } else {
