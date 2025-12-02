@@ -1,11 +1,11 @@
 // --- DÉBUT DU CONTENU DU FICHIER logic.js ---
 
-// 1. CONFIGURATION ET INITIALISATION DU CLIENT SUPABASE (Fusionné ici)
-// REMPLACEZ CES PLACEHOLDERS PAR VOS VRAIES CLÉS SUPABASE
-const SUPABASE_URL = 'https://qokkovegsxandxycmfru.supabase.co'; 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
+// 1. CONFIGURATION ET CLÉS SUPABASE (Déplacées ici)
+// NOTE : Ces variables seront lues dans l'événement DOMContentLoaded.
+const SUPABASE_URL = 'https://qokkovegsxandxycmfru.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
 
-// Déclare la variable globalement, mais NE L'INITIALISE PAS encore.
+// Déclare la variable globalement (sera initialisée dans DOMContentLoaded)
 let supabase; 
 
 
@@ -15,12 +15,11 @@ let supabase;
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- INITIALISATION CRITIQUE DE SUPABASE ---
-    // Nous utilisons window.supabase pour nous assurer que la librairie est chargée
+    // --- INITIALISATION CRITIQUE DE SUPABASE (La correction) ---
     if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // CORRECTION : Assigne le client à la variable 'supabase' déjà déclarée (let supabase;)
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
     } else {
-        // Message d'erreur si la librairie CDN n'a pas chargé
         document.getElementById("diapo-content").innerHTML = `<div class="slide-item"><h1>ERREUR FATALE: Librairie Supabase introuvable.</h1><p>Vérifiez votre connexion et le lien CDN dans admin.html.</p></div>`;
         return;
     }
@@ -32,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     sessionStorage.removeItem('isAdmin'); 
 
-    // --- VARIABLES GLOBALES (Maintenant définies dans le scope de DOMContentLoaded) ---
+    // --- VARIABLES GLOBALES ---
     const zones = [1, 2];
     const questions = ["q1","q2","q3","q4"];
     const TRANSITION_DURATION_MS = 500; 
