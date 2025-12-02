@@ -1,8 +1,26 @@
+// REMPLACEZ CES PLACEHOLDERS PAR VOS VRAIES CLÉS SUPABASE
+const SUPABASE_URL = 'https://qokkovegsxandxycmfru.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// --- FIN DU CONTENU DE L'ANCIEN FICHIER supabase-config.js ---
+
+
 // --- VÉRIFICATION DE SÉCURITÉ ---
 if (sessionStorage.getItem('isAdmin') !== 'true') {
     window.location.href = "admin-login.html";
 }
 sessionStorage.removeItem('isAdmin'); 
+
+// --- VARIABLES GLOBALES ---
+const zones = [1, 2];
+const questions = ["q1","q2","q3","q4"];
+const TRANSITION_DURATION_MS = 500; 
+
+let slideDefinitions = [];      
+let currentSlide = 0;           
+let currentResponseIndex = {};  
+let rawData = {};
 
 // --- VARIABLES GLOBALES ---
 const zones = [1, 2];
