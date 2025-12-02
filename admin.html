@@ -6,12 +6,9 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <title>Admin - Diaporama Réponses</title>
 <style>
-/* Styles essentiels pour la page */
 html, body { height: 100%; margin: 0; background: #000; color: #fff; }
 
-/* Nouveau style pour le conteneur du diaporama */
 #diapo-content-wrapper {
-    /* Utilise toute la hauteur disponible moins la barre de navigation */
     height: calc(100vh - 56px); 
     display: flex;
     justify-content: center; 
@@ -20,16 +17,14 @@ html, body { height: 100%; margin: 0; background: #000; color: #fff; }
     width: 100%;
 }
 #diapo-content {
-    /* Conteneur pour le contenu de la slide (permet la transition d'opacité) */
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 80%; /* Donne de l'espace aux boutons de navigation */
+    width: 80%; 
     height: 100%;
-    transition: opacity 0.5s ease-in-out; /* Ajout d'une transition pour l'effet */
+    transition: opacity 0.5s ease-in-out; 
 }
 
-/* Styles pour les éléments de la slide */
 .slide-item { 
     max-height: 90%; 
     overflow-y: auto;
@@ -41,12 +36,10 @@ html, body { height: 100%; margin: 0; background: #000; color: #fff; }
     align-items: center;
 }
 
-/* Styles spécifiques au contenu */
 h2 { font-size: 2.5rem; margin-bottom: 1rem; }
 p { font-size: 1.8rem; margin-bottom: 1rem; }
 .separator { font-size: 3rem; font-weight: bold; }
 
-/* Styles pour les boutons de navigation (Positionnement sur les bords) */
 .nav-button {
     font-size: 2rem;
     padding: 1rem 1.5rem;
@@ -91,6 +84,8 @@ p { font-size: 1.8rem; margin-bottom: 1rem; }
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
 // --- VÉRIFICATION DE SÉCURITÉ ---
 if (sessionStorage.getItem('isAdmin') !== 'true') {
@@ -103,10 +98,10 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
-let slideDefinitions = [];      // Tableau des définitions de slides (ID + Type)
-let currentSlide = 0;           // Index de la slide actuellement affichée (dans slideDefinitions)
-let currentResponseIndex = {};  // { 'zone_question': index_reponse_visible }
-let rawData = {};               // { 'zone_question': [reponses brutes] }
+let slideDefinitions = [];     
+let currentSlide = 0;           
+let currentResponseIndex = {};  
+let rawData = {};               
 
 // --- FONCTIONS ESSENTIELLES ---
 
@@ -117,42 +112,65 @@ function toggleFullscreen() {
 }
 
 /**
- * Récupère les données brutes du localStorage et remplit le tableau 'slideDefinitions'.
+ * Récupère les données brutes de la BD Supabase et remplit le tableau 'slideDefinitions'.
  */
-function generateSlideDefinitions() {
-    slideDefinitions = []; 
+async function generateSlideDefinitions() {
+    // Vérifie si le client Supabase est défini
+    if (typeof supabase === 'undefined') {
+        document.getElementById("diapo-content").innerHTML = `<div class="slide-item"><h1>Erreur: Supabase non initialisé. Vérifiez supabase-config.js.</h1></div>`;
+        return;
+    }
 
+    slideDefinitions = []; 
+    rawData = {}; 
+
+    // 1. Requête Supabase
+    const { data: responses, error } = await supabase
+        .from('reponses')
+        .select('zone, question, reponse')
+        .order('created_at', { ascending: true }); // Triage par date de création
+
+    if (error) {
+        console.error('Erreur Supabase :', error);
+        document.getElementById("diapo-content").innerHTML = `<div class="slide-item"><h1>Erreur de BD: ${error.message}</h1></div>`;
+        return;
+    }
+    
+    // 2. Traitement des données pour reconstruire le format 'rawData'
+    const groupedResponses = responses.reduce((acc, row) => {
+        const key = `${row.zone}_${row.question}`;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(row.reponse);
+        return acc;
+    }, {});
+
+
+    // 3. Remplissage des 'slideDefinitions'
     zones.forEach(zone => {
-        // 1. Slide séparateur (Situation)
         slideDefinitions.push({ type: 'separator', id: `sep_${zone}`, zone: zone });
 
         questions.forEach(q => {
             const key = `${zone}_${q}`;
-            const allResponses = JSON.parse(localStorage.getItem(key)) || []; 
+            const data = groupedResponses[key] || []; 
             
-            // Stocke les données brutes
-            rawData[key] = allResponses.filter(r => r && r.trim() !== ""); 
+            rawData[key] = data; 
             
             if (rawData[key].length > 0) {
-                // Initialise l'index de réponse pour cette question à 0 si non défini
                 if (currentResponseIndex[key] === undefined) {
                     currentResponseIndex[key] = 0; 
                 }
-                
-                // 2. Slide Question/Réponse
                 slideDefinitions.push({ type: 'question', id: key, zone: zone, question: q });
             }
         });
     });
     
-    // S'assurer que l'index reste valide
     if (currentSlide >= slideDefinitions.length) {
         currentSlide = 0;
     }
 }
 
 /**
- * Génère le HTML pour la slide actuellement définie (ID, index de réponse).
+ * Génère le HTML pour la slide actuellement définie.
  */
 function generateSlideHTML(slideDef) {
     const { type, id, zone, question } = slideDef;
@@ -164,9 +182,9 @@ function generateSlideHTML(slideDef) {
     if (type === 'question') {
         const key = id;
         const data = rawData[key];
-        const currentIdx = currentResponseIndex[key]; // Nombre de réponses à afficher (1, 2, 3...)
+        const currentIdx = currentResponseIndex[key];
         const totalResponses = data.length;
-        const responseToShowIndex = currentIdx - 1; // Index dans le tableau (0, 1, 2...)
+        const responseToShowIndex = currentIdx - 1;
 
         let content = `
             <div style="max-height:90%; overflow-y:auto;">
@@ -176,12 +194,10 @@ function generateSlideHTML(slideDef) {
         
         // --- AFFICHAGE DE LA RÉPONSE EN COURS SEULEMENT ---
         if (currentIdx > 0 && responseToShowIndex < totalResponses) {
-            // Affiche uniquement la réponse correspondant à l'index actuel
             content += `<p style="font-weight: bold; color: #fff;">
                             ${currentIdx.toLocaleString()}. ${data[responseToShowIndex]}
                         </p>`;
         } else if (currentIdx === 0 && totalResponses > 0) {
-            // Afficher un message de démarrage si aucune réponse n'est encore affichée
             content += `<p style="font-style: italic; color: #aaa;">
                             Cliquez sur "Afficher Réponse" pour commencer.
                         </p>`;
@@ -196,12 +212,10 @@ function generateSlideHTML(slideDef) {
         // --- BOUTONS D'ACTION SUR LA DIAPO ---
         content += `<div style="margin-top: 30px;">`;
 
-        // 1. Bouton "Afficher la réponse précédente"
         if (currentIdx > 1) {
             content += `<button class="btn btn-warning me-3" onclick="handleResponseNavigation('${key}', -1)">Réponse Précédente</button>`;
         }
         
-        // 2. Bouton "Afficher la réponse suivante"
         if (currentIdx < totalResponses) {
             content += `<button class="btn btn-success" onclick="handleResponseNavigation('${key}', 1)">Afficher Réponse ${currentIdx + 1}/${totalResponses}</button>`;
         } else {
@@ -227,14 +241,10 @@ function displayCurrentSlide() {
         return;
     }
     
-    // 1. Début de la transition
     contentContainer.style.opacity = 0; 
     
     setTimeout(() => {
-        // Génère le HTML au moment de l'affichage
         contentContainer.innerHTML = generateSlideHTML(slideDefinitions[currentSlide]);
-
-        // 2. Rétablit l'opacité
         contentContainer.style.opacity = 1;
 
     }, TRANSITION_DURATION_MS); 
@@ -247,36 +257,30 @@ function handleResponseNavigation(key, direction) {
     if (currentResponseIndex[key] === undefined) return;
     
     const totalResponses = rawData[key].length;
-    let newIndex = currentResponseIndex[key] + direction; // newIndex représente le NOMBRE de réponses à afficher
+    let newIndex = currentResponseIndex[key] + direction;
 
-    // S'assurer que le nouvel index est dans les limites [0, totalResponses]
     if (newIndex >= 0 && newIndex <= totalResponses) {
         currentResponseIndex[key] = newIndex;
-        
-        // Re-afficher la slide actuelle avec le nouvel index de réponse
         displayCurrentSlide();
     }
 }
 
 /**
  * Gère le défilement des slides (manuellement).
- * @param {number} direction - 1 pour Suivant, -1 pour Précédent.
  */
 function navigateSlide(direction) {
     if (slideDefinitions.length === 0) return;
     
-    // Calcul du nouvel index de slide avec gestion du bouclage
     currentSlide = (currentSlide + direction + slideDefinitions.length) % slideDefinitions.length;
-
     displayCurrentSlide();
 }
 
 /**
  * Fonction appelée par les boutons de navigation externes.
  */
-function handleManualNavigation(direction) {
-    // 1. Met à jour les définitions (pour voir si de nouvelles questions sont apparues)
-    generateSlideDefinitions(); 
+async function handleManualNavigation(direction) {
+    // 1. Met à jour les définitions (récupère les nouvelles données de Supabase)
+    await generateSlideDefinitions(); 
     
     // 2. Navigue vers la slide demandée
     navigateSlide(direction);
@@ -285,11 +289,15 @@ function handleManualNavigation(direction) {
 
 // --- INITIALISATION ---
 
-// 1. Premier chargement : récupération des définitions et données.
-generateSlideDefinitions();
+async function initializeAdmin() {
+    // 1. Premier chargement : récupération des définitions et données.
+    await generateSlideDefinitions(); 
 
-// 2. Affichage de la première slide.
-displayCurrentSlide();
+    // 2. Affichage de la première slide.
+    displayCurrentSlide();
+}
+
+initializeAdmin();
 </script>
 </body>
 </html>
