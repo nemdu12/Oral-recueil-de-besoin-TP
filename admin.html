@@ -6,11 +6,12 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <title>Admin - Diaporama Réponses</title>
 <style>
-/* Styles inchangés */
+/* Styles généraux */
 html, body { height: 100%; margin: 0; background: #000; color: #fff; }
 
+/* Conteneur principal du diaporama */
 #diapo-content-wrapper {
-    height: calc(100vh - 56px); 
+    height: calc(100vh - 56px - 10px); /* 56px navbar - 10px progress bar */
     display: flex;
     justify-content: center; 
     align-items: center;
@@ -26,6 +27,7 @@ html, body { height: 100%; margin: 0; background: #000; color: #fff; }
     transition: opacity 0.5s ease-in-out; 
 }
 
+/* Style de la slide */
 .slide-item { 
     max-height: 90%; 
     overflow-y: auto;
@@ -41,6 +43,7 @@ h2 { font-size: 2.5rem; margin-bottom: 1rem; }
 p { font-size: 1.8rem; margin-bottom: 1rem; }
 .separator { font-size: 3rem; font-weight: bold; }
 
+/* Styles des boutons de navigation latérale */
 .nav-button {
     font-size: 2rem;
     padding: 1rem 1.5rem;
@@ -59,9 +62,32 @@ p { font-size: 1.8rem; margin-bottom: 1rem; }
 }
 #nav-prev { left: 0; }
 #nav-next { right: 0; }
+
+/* Styles de la barre de progression */
+#progress-bar-container {
+    width: 100%;
+    height: 10px; /* Hauteur de la barre */
+    background-color: #333; /* Fond sombre */
+    position: fixed; /* Fixer en bas de la fenêtre */
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+}
+
+#progress-bar {
+    height: 100%;
+    width: 0%; /* La largeur sera gérée par JavaScript */
+    background-color: #17a2b8; /* Couleur Bootstrap info/cyan */
+    transition: width 0.5s ease-in-out; /* Animation douce */
+}
 </style>
 </head>
 <body>
+
+<nav class="navbar navbar-dark bg-primary px-3">
+    <span class="navbar-brand">Espace Admin</span>
+    <button class="btn btn-light ms-2" onclick="toggleFullscreen()">Plein écran</button>
+</nav>
 
 <div id="diapo-content-wrapper">
     
@@ -79,10 +105,12 @@ p { font-size: 1.8rem; margin-bottom: 1rem; }
     
 </div>
 
+<div id="progress-bar-container">
+    <div id="progress-bar"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script> 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="logic.js" defer></script>
 </body>
 </html>
-
-
