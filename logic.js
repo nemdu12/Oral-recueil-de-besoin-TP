@@ -15,7 +15,7 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
-// Dossier et format de fichier pour les images de diapositives (selon la dernière correction : diapoX.jpg)
+// Dossier et format de fichier pour les images de diapositives
 const DIAPO_FOLDER = 'diapos';
 const DIAPO_FILE_EXTENSION = '.jpg'; 
 
@@ -180,12 +180,11 @@ function generateSlideHTML(slideDef) {
         return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
     }
     
-    // GESTION DU TYPE IMAGE: Ajout de la classe 'is-image-slide' pour le CSS de compatibilité
+    // GESTION DU TYPE IMAGE: Suppression du texte descriptif en dessous
     if (type === 'image') {
         return `
             <div class="slide-item is-image-slide">
                 <img src="${slideDef.url}" alt="${slideDef.description}" class="full-screen-image">
-                <p style="margin-top: 15px; font-size: 1.2rem; color: #fff;">${slideDef.description}</p>
             </div>
         `;
     }
