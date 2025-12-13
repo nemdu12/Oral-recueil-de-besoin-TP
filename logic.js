@@ -12,6 +12,7 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
+
 // --- 1. FONCTIONS GLOBALES (Appelées par onclick du HTML) ---
 
 window.toggleFullscreen = function() {
@@ -95,7 +96,7 @@ async function generateSlideDefinitions() {
     
     // A) AJOUT DES SLIDES IMAGES 1d à 7d
     for (let i = 1; i <= 7; i++) {
-        // CHEMIN SIMPLIFIÉ GRÂCE AU NOUVEAU NOM DE FICHIER
+        // Chemin simplifié : diapos/diapoX.jpg
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
@@ -127,7 +128,7 @@ async function generateSlideDefinitions() {
 
     // C) AJOUT DES SLIDES IMAGES 8d à 11d
     for (let i = 8; i <= 11; i++) {
-        // CHEMIN SIMPLIFIÉ GRÂCE AU NOUVEAU NOM DE FICHIER
+        // Chemin simplifié : diapos/diapoX.jpg
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
@@ -155,11 +156,11 @@ function generateSlideHTML(slideDef) {
         return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
     }
     
-    // GESTION DU TYPE IMAGE
+    // GESTION DU TYPE IMAGE (CLASSE CSS pour plein écran)
     if (type === 'image') {
         return `
             <div class="slide-item">
-                <img src="${slideDef.url}" alt="${slideDef.description}" style="max-width: 90%; max-height: 80vh; object-fit: contain;">
+                <img src="${slideDef.url}" alt="${slideDef.description}" class="full-screen-image">
                 <p style="margin-top: 15px; font-size: 1.2rem; color: #fff;">${slideDef.description}</p>
             </div>
         `;
