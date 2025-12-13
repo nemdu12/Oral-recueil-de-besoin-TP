@@ -62,7 +62,7 @@ function updateProgressBar() {
 
 
 /**
- * Effectue la requête BD et met à jour les données brutes.
+ * Effectue la requête BD et construit le tableau de slides dans l'ordre désiré.
  */
 async function generateSlideDefinitions() {
     if (typeof supabase === 'undefined' || supabase === null) {
@@ -72,6 +72,7 @@ async function generateSlideDefinitions() {
     slideDefinitions = []; 
     rawData = {}; 
 
+    // --- ÉTAPE 1: RÉCUPÉRATION DES DONNÉES DE LA BD ---
     const { data: responses, error } = await supabase
         .from('reponses')
         .select('zone, question, reponse')
@@ -83,6 +84,7 @@ async function generateSlideDefinitions() {
         return;
     }
     
+    // Traitement des données pour grouper les réponses par clé (zone_question)
     const groupedResponses = responses.reduce((acc, row) => {
         const key = `${row.zone}_${row.question}`;
         if (!acc[key]) acc[key] = [];
@@ -91,10 +93,21 @@ async function generateSlideDefinitions() {
     }, {});
 
 
-    // --- AJOUT DE LA LOGIQUE D'INTÉGRATION DES SLIDES PDF ---
+    // --- ÉTAPE 2: CONSTRUCTION DU TABLEAU DE SLIDES DANS L'ORDRE DÉSIRÉ ---
     
+    // A) AJOUT DES SLIDES IMAGES 1d à 7d
+    for (let i = 1; i <= 7; i++) {
+        slideDefinitions.push({ 
+            type: 'image', 
+            id: `diapo-${i}`, 
+            url: `diapo-image/diapo-${i}.png`, 
+            description: `Slide d'introduction ${i}` 
+        });
+    }
+
+    // B) AJOUT DES SLIDES DE RÉPONSES (r)
     zones.forEach(zone => {
-        // Ajoute le séparateur de zone
+        // Ajout du Séparateur (ex: Situation 1, Situation 2)
         slideDefinitions.push({ type: 'separator', id: `sep_${zone}`, zone: zone });
 
         questions.forEach(q => {
@@ -104,36 +117,27 @@ async function generateSlideDefinitions() {
             rawData[key] = data; 
             
             if (rawData[key].length > 0) {
+                // Ajout de la slide de question si des réponses existent
                 if (currentResponseIndex[key] === undefined) {
                     currentResponseIndex[key] = 0; 
                 }
-                // Ajoute la slide de question
                 slideDefinitions.push({ type: 'question', id: key, zone: zone, question: q });
             }
         });
-        
-        // C'est ici que nous insérons les images entre la Zone 1 et la Zone 2
-        if (zone === 1) {
-            
-            // INSÉRER VOS SLIDES PDF ICI (Les images dans le dossier diapo-image)
-            
-            slideDefinitions.push({ 
-                type: 'image', 
-                id: 'pdf-slide-1', 
-                url: 'diapo-image/diapo-7.png', // Assurez-vous que le nom de fichier est correct
-                description: "Slide complémentaire 1 du PDF" 
-            });
-            
-            slideDefinitions.push({ 
-                type: 'image', 
-                id: 'pdf-slide-2', 
-                url: 'diapo-image/diapo-8.png', // Assurez-vous que le nom de fichier est correct
-                description: "Slide complémentaire 2 du PDF" 
-            });
-            
-        }
     });
+
+    // C) AJOUT DES SLIDES IMAGES 8d à 11d
+    for (let i = 8; i <= 11; i++) {
+        slideDefinitions.push({ 
+            type: 'image', 
+            id: `diapo-${i}`, 
+            url: `diapo-image/diapo-${i}.png`, 
+            description: `Slide de conclusion ${i}` 
+        });
+    }
     
+    // --- FIN DE LA CONSTRUCTION ---
+
     if (currentSlide >= slideDefinitions.length) {
         currentSlide = 0;
     }
@@ -142,7 +146,7 @@ async function generateSlideDefinitions() {
 }
 
 /**
- * Génère le HTML pour la slide actuellement définie.
+ * Génère le HTML pour la slide actuellement définie (avec gestion du type 'image').
  */
 function generateSlideHTML(slideDef) {
     const { type, id, zone, question } = slideDef;
@@ -150,8 +154,8 @@ function generateSlideHTML(slideDef) {
     if (type === 'separator') {
         return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
     }
-
-    // --- GESTION DU NOUVEAU TYPE IMAGE ---
+    
+    // GESTION DU TYPE IMAGE
     if (type === 'image') {
         return `
             <div class="slide-item">
