@@ -10,17 +10,18 @@
 html, body { 
     height: 100%; 
     margin: 0; 
-    background: #f0e8db; /* NOUVEAU FOND (Beige clair) */
+    background: #fff3c2; /* NOUVEAU FOND (Beige clair) */
     color: #000;      /* NOUVELLE COULEUR DE TEXTE PAR DÉFAUT (Noir) */
 }
 
 /* Conteneur principal du diaporama */
 #diapo-content-wrapper {
+    /* La taille est basée sur la hauteur de la fenêtre moins la navbar (56px) et la barre de progression (10px) */
     height: calc(100vh - 56px - 10px); 
     display: flex;
     justify-content: center; 
     align-items: center;
-    padding: 20px; 
+    padding: 20px; /* Padding global pour les marges */
     width: 100%;
 }
 #diapo-content {
@@ -36,7 +37,7 @@ html, body {
 .slide-item { 
     max-height: 100%; 
     overflow-y: auto;
-    width: 90%; 
+    width: 90%; /* Largeur limitée pour le texte */
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -45,25 +46,32 @@ html, body {
     padding: 0; 
 }
 
-h2 { font-size: 2.5rem; margin-bottom: 1rem; color: #000; } /* Force le titre en noir */
-p { font-size: 1.8rem; margin-bottom: 1rem; }
+h2 { font-size: 2.5rem; margin-bottom: 1rem; }
+p { 
+    font-size: 1.8rem; 
+    margin-bottom: 1rem;
+    color: #000 !important; /* CORRECTION: FORCÉ EN NOIR pour la lisibilité de la réponse */
+}
 .separator { font-size: 3rem; font-weight: bold; }
+
 
 /* --- STYLES DÉDIÉS AUX IMAGES PLEIN ÉCRAN --- */
 
+/* Style appliqué uniquement aux conteneurs de slides d'images */
 .is-image-slide {
     width: 100%; 
     height: 100%; 
     max-width: 100%;
     max-height: 100%;
     padding: 0; 
-    justify-content: center; 
+    justify-content: center; /* Centrage vertical de l'image */
 }
 
+/* La classe applied à l'image elle-même */
 .full-screen-image {
     width: 100%; 
     height: 100%; 
-    object-fit: contain; 
+    object-fit: contain; /* L'image remplit l'espace sans être coupée, gardant le ratio */
 }
 
 /* Styles des boutons de navigation latérale */
@@ -141,8 +149,3 @@ hr { border-color: #aaa; }
 <script src="logic.js?v=20251213" defer></script>
 </body>
 </html>
-
-
-
-
-
