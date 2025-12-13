@@ -62,7 +62,7 @@ function updateProgressBar() {
 
 
 /**
- * Effectue la requête BD et construit le tableau de slides dans l'ordre désiré.
+ * Effectue la requête BD et construit le tableau de slides dans l'ordre D1-D7 -> Réponses BD -> D8-D11.
  */
 async function generateSlideDefinitions() {
     if (typeof supabase === 'undefined' || supabase === null) {
@@ -100,6 +100,7 @@ async function generateSlideDefinitions() {
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
+            // VÉRIFIEZ QUE LA CASSE 'diapo-image' est correcte sur GitHub
             url: `diapo-image/diapo-${i}.png`, 
             description: `Slide d'introduction ${i}` 
         });
@@ -131,6 +132,7 @@ async function generateSlideDefinitions() {
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
+            // VÉRIFIEZ QUE LA CASSE 'diapo-image' est correcte sur GitHub
             url: `diapo-image/diapo-${i}.png`, 
             description: `Slide de conclusion ${i}` 
         });
