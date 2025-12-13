@@ -12,6 +12,12 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
+/**
+ * Aide à formater les numéros de page avec un padding de 4 chiffres (ex: 1 -> 0001).
+ * Ceci est crucial pour le nom de fichier des diapositives.
+ */
+const padPageNumber = (num) => String(num).padStart(4, '0');
+
 
 // --- 1. FONCTIONS GLOBALES (Appelées par onclick du HTML) ---
 
@@ -84,7 +90,6 @@ async function generateSlideDefinitions() {
         return;
     }
     
-    // Traitement des données pour grouper les réponses par clé (zone_question)
     const groupedResponses = responses.reduce((acc, row) => {
         const key = `${row.zone}_${row.question}`;
         if (!acc[key]) acc[key] = [];
@@ -97,11 +102,12 @@ async function generateSlideDefinitions() {
     
     // A) AJOUT DES SLIDES IMAGES 1d à 7d
     for (let i = 1; i <= 7; i++) {
+        const paddedNum = padPageNumber(i);
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
-            // CORRECTION DU CHEMIN ICI : 'diapo-image' remplacé par 'diapos'
-            url: `diapos/diapo-${i}.png`, 
+            // CORRECTION: Utilisation du nom de fichier exact, majuscules, et extension .jpg
+            url: `diapos/SOMMAIRE_pages-to-jpg-${paddedNum}.jpg`, 
             description: `Slide d'introduction ${i}` 
         });
     }
@@ -129,11 +135,12 @@ async function generateSlideDefinitions() {
 
     // C) AJOUT DES SLIDES IMAGES 8d à 11d
     for (let i = 8; i <= 11; i++) {
+        const paddedNum = padPageNumber(i);
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
-            // CORRECTION DU CHEMIN ICI : 'diapo-image' remplacé par 'diapos'
-            url: `diapos/diapo-${i}.png`, 
+            // CORRECTION: Utilisation du nom de fichier exact, majuscules, et extension .jpg
+            url: `diapos/SOMMAIRE_pages-to-jpg-${paddedNum}.jpg`, 
             description: `Slide de conclusion ${i}` 
         });
     }
