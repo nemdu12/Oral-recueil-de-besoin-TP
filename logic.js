@@ -29,7 +29,6 @@ window.handleResponseNavigation = function(key, direction) {
 
     if (newIndex >= 0 && newIndex <= totalResponses) {
         currentResponseIndex[key] = newIndex;
-        // La fonction displayCurrentSlide est appelée ci-dessous
         displayCurrentSlide();
     }
 }
@@ -92,7 +91,10 @@ async function generateSlideDefinitions() {
     }, {});
 
 
+    // --- AJOUT DE LA LOGIQUE D'INTÉGRATION DES SLIDES PDF ---
+    
     zones.forEach(zone => {
+        // Ajoute le séparateur de zone
         slideDefinitions.push({ type: 'separator', id: `sep_${zone}`, zone: zone });
 
         questions.forEach(q => {
@@ -105,9 +107,31 @@ async function generateSlideDefinitions() {
                 if (currentResponseIndex[key] === undefined) {
                     currentResponseIndex[key] = 0; 
                 }
+                // Ajoute la slide de question
                 slideDefinitions.push({ type: 'question', id: key, zone: zone, question: q });
             }
         });
+        
+        // C'est ici que nous insérons les images entre la Zone 1 et la Zone 2
+        if (zone === 1) {
+            
+            // INSÉRER VOS SLIDES PDF ICI (Les images dans le dossier diapo-image)
+            
+            slideDefinitions.push({ 
+                type: 'image', 
+                id: 'pdf-slide-1', 
+                url: 'diapo-image/diapo-7.png', // Assurez-vous que le nom de fichier est correct
+                description: "Slide complémentaire 1 du PDF" 
+            });
+            
+            slideDefinitions.push({ 
+                type: 'image', 
+                id: 'pdf-slide-2', 
+                url: 'diapo-image/diapo-8.png', // Assurez-vous que le nom de fichier est correct
+                description: "Slide complémentaire 2 du PDF" 
+            });
+            
+        }
     });
     
     if (currentSlide >= slideDefinitions.length) {
@@ -127,6 +151,16 @@ function generateSlideHTML(slideDef) {
         return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
     }
 
+    // --- GESTION DU NOUVEAU TYPE IMAGE ---
+    if (type === 'image') {
+        return `
+            <div class="slide-item">
+                <img src="${slideDef.url}" alt="${slideDef.description}" style="max-width: 90%; max-height: 80vh; object-fit: contain;">
+                <p style="margin-top: 15px; font-size: 1.2rem; color: #fff;">${slideDef.description}</p>
+            </div>
+        `;
+    }
+    
     if (type === 'question') {
         const key = id;
         const data = rawData[key];
@@ -140,6 +174,7 @@ function generateSlideHTML(slideDef) {
                 <hr style="color: #fff;">
         `;
         
+        // --- AFFICHAGE DE LA RÉPONSE EN COURS SEULEMENT ---
         if (currentIdx > 0 && responseToShowIndex < totalResponses) {
             content += `<p style="font-weight: bold; color: #fff;">
                             ${currentIdx.toLocaleString()}. ${data[responseToShowIndex]}
@@ -156,7 +191,7 @@ function generateSlideHTML(slideDef) {
         
         content += `</div>`;
         
-        // Les boutons appellent des fonctions GLOBALES
+        // --- BOUTONS D'ACTION SUR LA DIAPO ---
         content += `<div style="margin-top: 30px;">`;
 
         if (currentIdx > 1) {
