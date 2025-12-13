@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>Admin - Diaporama Réponses</title>
 <style>
 /* Styles généraux */
 html, body { height: 100%; margin: 0; background: #000; color: #fff; }
@@ -16,23 +23,22 @@ html, body { height: 100%; margin: 0; background: #000; color: #fff; }
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Nous augmentons à 100% ici et gérons la limitation dans les items */
     width: 100%; 
     height: 100%;
     transition: opacity 0.5s ease-in-out; 
 }
 
-/* Style général des slides (pour les textes/réponses) */
+/* Style par défaut des slides (pour les textes/réponses) */
 .slide-item { 
-    max-height: 100%; /* Augmenté à 100% */
+    max-height: 100%; 
     overflow-y: auto;
-    width: 90%; /* On applique une marge max ici pour le texte */
+    width: 90%; /* Largeur limitée pour le texte */
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 0; /* Suppression du padding superflu */
+    padding: 0; 
 }
 
 h2 { font-size: 2.5rem; margin-bottom: 1rem; }
@@ -40,31 +46,23 @@ p { font-size: 1.8rem; margin-bottom: 1rem; }
 .separator { font-size: 3rem; font-weight: bold; }
 
 
-/* --- NOUVEAUX STYLES DÉDIÉS AUX IMAGES PLEIN ÉCRAN --- */
+/* --- STYLES DÉDIÉS AUX IMAGES PLEIN ÉCRAN (Correction de compatibilité) --- */
+
+/* Style appliqué uniquement aux conteneurs de slides d'images */
+.is-image-slide {
+    width: 100%; /* Prend toute la largeur disponible */
+    height: 100%; /* Prend toute la hauteur disponible */
+    max-width: 100%;
+    max-height: 100%;
+    padding: 0; /* Élimine le padding */
+    justify-content: center; 
+}
 
 /* La classe applied à l'image elle-même */
 .full-screen-image {
-    /* L'image prend toute la hauteur et largeur disponibles de son parent */
     width: 100%; 
     height: 100%; 
-    
-    /* Retire la barre de défilement pour les très grandes images */
-    overflow: hidden; 
-    
-    /* Assure que l'image est visible en entier, peu importe le ratio */
-    object-fit: contain; 
-}
-
-/* Nous ciblons spécifiquement le conteneur parent (slide-item) des images 
-   pour enlever le padding et garantir qu'elles utilisent tout l'espace 
-   alloué par #diapo-content-wrapper */
-.slide-item:has(.full-screen-image) {
-    width: 100%; /* Prend toute la largeur de #diapo-content-wrapper */
-    height: 100%; /* Prend toute la hauteur de #diapo-content-wrapper */
-    max-width: 100%;
-    max-height: 100%;
-    padding: 0; /* Élimine tout padding résiduel */
-    justify-content: flex-start; /* Commence l'alignement en haut */
+    object-fit: contain; /* L'image remplit l'espace sans être coupée, gardant le ratio */
 }
 
 /* Styles des boutons de navigation latérale */
@@ -105,3 +103,36 @@ p { font-size: 1.8rem; margin-bottom: 1rem; }
     transition: width 0.5s ease-in-out; 
 }
 </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary px-3">
+    <span class="navbar-brand">Espace Admin</span>
+    <button class="btn btn-light ms-2" onclick="toggleFullscreen()">Plein écran</button>
+</nav>
+
+<div id="diapo-content-wrapper">
+    
+    <button id="nav-prev" class="nav-button" onclick="handleManualNavigation(-1)">
+        &lsaquo;
+    </button>
+    
+    <div id="diapo-content">
+        <h1>Chargement des données...</h1>
+    </div>
+    
+    <button id="nav-next" class="nav-button" onclick="handleManualNavigation(1)">
+        &rsaquo;
+    </button>
+    
+</div>
+
+<div id="progress-bar-container">
+    <div id="progress-bar"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="logic.js" defer></script>
+</body>
+</html>
