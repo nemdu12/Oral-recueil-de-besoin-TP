@@ -1,4 +1,7 @@
-// --- Déclaration des variables globales (En dehors de tout bloc de fonction/événement) ---
+// =================================================================
+// Configuration et Variables Globales
+// =================================================================
+
 const SUPABASE_URL = 'https://qokkovegsxandxycmfru.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
 
@@ -12,15 +15,24 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
+// Dossier et format de fichier pour les images de diapositives
+const DIAPO_FOLDER = 'diapos';
+const DIAPO_FILE_EXTENSION = '.jpg'; 
 
-// --- 1. FONCTIONS GLOBALES (Appelées par onclick du HTML) ---
+
+// =================================================================
+// 1. Fonctions Globales (Appelées par onclick dans admin.html)
+// =================================================================
 
 window.toggleFullscreen = function() {
     const elem = document.documentElement; 
     if (!document.fullscreenElement) elem.requestFullscreen();
-    else document.exitFullscreen();
+    else elem.exitFullscreen();
 }
 
+/**
+ * Gère la navigation entre les différentes réponses pour une même question.
+ */
 window.handleResponseNavigation = function(key, direction) {
     if (currentResponseIndex[key] === undefined) return;
     
@@ -33,16 +45,22 @@ window.handleResponseNavigation = function(key, direction) {
     }
 }
 
+/**
+ * Gère la navigation entre les slides (boutons Précédent/Suivant).
+ */
 window.handleManualNavigation = async function(direction) {
+    // Recharge les données pour s'assurer qu'elles sont à jour avant de naviguer
     await generateSlideDefinitions(); 
     navigateSlide(direction);
 }
 
 
-// --- 2. FONCTIONS INTERNES (Logique de l'application) ---
+// =================================================================
+// 2. Fonctions Internes (Logique de l'application)
+// =================================================================
 
 /**
- * Met à jour la largeur de la barre de progression.
+ * Met à jour la largeur de la barre de progression en bas de l'écran.
  */
 function updateProgressBar() {
     const progressBar = document.getElementById('progress-bar');
@@ -62,7 +80,16 @@ function updateProgressBar() {
 
 
 /**
- * Effectue la requête BD et construit le tableau de slides dans l'ordre D1-D7 -> Réponses BD -> D8-D11.
+ * Construit l'URL complète pour une diapositive image.
+ */
+function getDiapoImageUrl(index) {
+    return `${DIAPO_FOLDER}/diapo${index}${DIAPO_FILE_EXTENSION}`;
+}
+
+
+/**
+ * Effectue la requête BD et construit le tableau de slides dans l'ordre désiré.
+ * Ordre: D1-D7 -> Réponses BD (Zone 1 & 2) -> D8-D11
  */
 async function generateSlideDefinitions() {
     if (typeof supabase === 'undefined' || supabase === null) {
@@ -72,7 +99,7 @@ async function generateSlideDefinitions() {
     slideDefinitions = []; 
     rawData = {}; 
 
-    // --- ÉTAPE 1: RÉCUPÉRATION DES DONNÉES DE LA BD ---
+    // --- ÉTAPE 1: RÉCUPÉRATION ET TRAITEMENT DES DONNÉES ---
     const { data: responses, error } = await supabase
         .from('reponses')
         .select('zone, question, reponse')
@@ -92,22 +119,21 @@ async function generateSlideDefinitions() {
     }, {});
 
 
-    // --- ÉTAPE 2: CONSTRUCTION DU TABLEAU DE SLIDES DANS L'ORDRE DÉSIRÉ ---
+    // --- ÉTAPE 2: CONSTRUCTION DU FLUX DE SLIDES ---
     
     // A) AJOUT DES SLIDES IMAGES 1d à 7d
     for (let i = 1; i <= 7; i++) {
-        // Chemin simplifié : diapos/diapoX.jpg
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
-            url: `diapos/diapo${i}.jpg`, 
+            url: getDiapoImageUrl(i), 
             description: `Slide d'introduction ${i}` 
         });
     }
 
     // B) AJOUT DES SLIDES DE RÉPONSES (r)
     zones.forEach(zone => {
-        // Ajout du Séparateur (ex: Situation 1, Situation 2)
+        // Séparateur de Zone (Ex: Situation 1)
         slideDefinitions.push({ type: 'separator', id: `sep_${zone}`, zone: zone });
 
         questions.forEach(q => {
@@ -128,11 +154,10 @@ async function generateSlideDefinitions() {
 
     // C) AJOUT DES SLIDES IMAGES 8d à 11d
     for (let i = 8; i <= 11; i++) {
-        // Chemin simplifié : diapos/diapoX.jpg
         slideDefinitions.push({ 
             type: 'image', 
             id: `diapo-${i}`, 
-            url: `diapos/diapo${i}.jpg`, 
+            url: getDiapoImageUrl(i), 
             description: `Slide de conclusion ${i}` 
         });
     }
@@ -147,7 +172,7 @@ async function generateSlideDefinitions() {
 }
 
 /**
- * Génère le HTML pour la slide actuellement définie (avec gestion du type 'image').
+ * Génère le HTML pour une slide donnée, en fonction de son type.
  */
 function generateSlideHTML(slideDef) {
     const { type, id, zone, question } = slideDef;
@@ -156,7 +181,7 @@ function generateSlideHTML(slideDef) {
         return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
     }
     
-    // GESTION DU TYPE IMAGE (CLASSE CSS pour plein écran)
+    // GESTION DU TYPE IMAGE (Utilise la classe full-screen-image)
     if (type === 'image') {
         return `
             <div class="slide-item">
@@ -179,7 +204,7 @@ function generateSlideHTML(slideDef) {
                 <hr style="color: #fff;">
         `;
         
-        // --- AFFICHAGE DE LA RÉPONSE EN COURS SEULEMENT ---
+        // Affichage de la réponse en cours
         if (currentIdx > 0 && responseToShowIndex < totalResponses) {
             content += `<p style="font-weight: bold; color: #fff;">
                             ${currentIdx.toLocaleString()}. ${data[responseToShowIndex]}
@@ -196,7 +221,7 @@ function generateSlideHTML(slideDef) {
         
         content += `</div>`;
         
-        // --- BOUTONS D'ACTION SUR LA DIAPO ---
+        // Boutons de navigation des réponses
         content += `<div style="margin-top: 30px;">`;
 
         if (currentIdx > 1) {
@@ -218,7 +243,7 @@ function generateSlideHTML(slideDef) {
 }
 
 /**
- * Gère l'affichage de la slide actuelle et met à jour l'indicateur.
+ * Gère l'affichage de la slide actuelle et les animations.
  */
 function displayCurrentSlide() {
     const contentContainer = document.getElementById("diapo-content");
@@ -238,7 +263,7 @@ function displayCurrentSlide() {
 }
 
 /**
- * Avance l'index de la slide.
+ * Avance ou recule l'index de la slide dans la liste complète.
  */
 function navigateSlide(direction) {
     if (slideDefinitions.length === 0) return;
@@ -248,11 +273,13 @@ function navigateSlide(direction) {
 }
 
 
-// --- 3. INITIALISATION DE L'APPLICATION ---
+// =================================================================
+// 3. INITIALISATION DE L'APPLICATION
+// =================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- INITIALISATION CRITIQUE DE SUPABASE ---
+    // --- Vérification et Initialisation de Supabase ---
     if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
     } else {
@@ -260,14 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // --- VÉRIFICATION DE SÉCURITÉ ---
+    // --- Vérification d'Authentification (Sécurité) ---
     if (sessionStorage.getItem('isAdmin') !== 'true') {
         window.location.href = "admin-login.html";
         return;
     }
     sessionStorage.removeItem('isAdmin'); 
 
-    // --- DÉMARRAGE DE L'APP ---
+    // --- Démarrage ---
     async function initializeAdmin() {
         await generateSlideDefinitions(); 
         displayCurrentSlide();
