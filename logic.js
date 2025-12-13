@@ -15,7 +15,7 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
-// Dossier et format de fichier pour les images de diapositives
+// Dossier et format de fichier pour les images de diapositives (selon la dernière correction : diapoX.jpg)
 const DIAPO_FOLDER = 'diapos';
 const DIAPO_FILE_EXTENSION = '.jpg'; 
 
@@ -49,7 +49,6 @@ window.handleResponseNavigation = function(key, direction) {
  * Gère la navigation entre les slides (boutons Précédent/Suivant).
  */
 window.handleManualNavigation = async function(direction) {
-    // Recharge les données pour s'assurer qu'elles sont à jour avant de naviguer
     await generateSlideDefinitions(); 
     navigateSlide(direction);
 }
@@ -80,7 +79,7 @@ function updateProgressBar() {
 
 
 /**
- * Construit l'URL complète pour une diapositive image.
+ * Construit l'URL complète pour une diapositive image (ex: diapos/diapo1.jpg).
  */
 function getDiapoImageUrl(index) {
     return `${DIAPO_FOLDER}/diapo${index}${DIAPO_FILE_EXTENSION}`;
@@ -181,10 +180,10 @@ function generateSlideHTML(slideDef) {
         return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
     }
     
-    // GESTION DU TYPE IMAGE (Utilise la classe full-screen-image)
+    // GESTION DU TYPE IMAGE: Ajout de la classe 'is-image-slide' pour le CSS de compatibilité
     if (type === 'image') {
         return `
-            <div class="slide-item">
+            <div class="slide-item is-image-slide">
                 <img src="${slideDef.url}" alt="${slideDef.description}" class="full-screen-image">
                 <p style="margin-top: 15px; font-size: 1.2rem; color: #fff;">${slideDef.description}</p>
             </div>
