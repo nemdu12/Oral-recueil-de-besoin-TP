@@ -15,7 +15,7 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
-// Dossier et format de fichier pour les images de diapositives
+// Dossier et format de fichier pour les images de diapositives (selon la dernière correction : diapoX.jpg)
 const DIAPO_FOLDER = 'diapos';
 const DIAPO_FILE_EXTENSION = '.jpg'; 
 
