@@ -229,7 +229,7 @@ function generateSlideHTML(slideDef) {
         if (currentIdx < totalResponses) {
             content += `<button class="btn btn-success" onclick="handleResponseNavigation('${key}', 1)">Afficher Réponse ${currentIdx + 1}/${totalResponses}</button>`;
         } else {
-            content += `<p class="text-success mt-2" style="font-weight: bold;">Toutes les ${totalResponses} réponses affichées.</p>`;
+            content += `<p class="text-success mt-2" style="font-weight: bold;">Les ${totalResponses} réponses sont affichées.</p>`;
         }
 
         content += `</div>`;
