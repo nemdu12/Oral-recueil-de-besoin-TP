@@ -32,10 +32,10 @@ const PRESENTATION_CONFIG = {
     },
     // Intitulés complets des questions (à adapter par vous)
     questionIntitules: {
-        q1: "Comment recueillir le besoin ?",
-        q2: "Quelles sont les solutions techniques ?",
-        q3: "Qui sont les parties prenantes ?",
-        q4: "Quel est l'impact du projet ?"
+        q1: "Qu'auriez-vous fait à la place ?",
+        q2: "Quel élément positif / négatif avez-vous remarqué dans la scène ?",
+        q3: "Comment faire pour éviter cette situation ?",
+        q4: "Quels éléments de cette situation pouvez-vous corréler avec des événements vécus en SAE / travaux de groupe ?"
     }
 };
 
