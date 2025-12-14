@@ -21,8 +21,29 @@ const DIAPO_FILE_EXTENSION = '.jpg';
 
 
 // =================================================================
+// NOUVEAU: MAPPING DES INTITULÉS POUR LA PRÉSENTATION
+// =================================================================
+
+const PRESENTATION_CONFIG = {
+    // Intitulés des zones
+    zoneNames: {
+        1: "Première situation",
+        2: "Deuxième situation"
+    },
+    // Intitulés complets des questions (à adapter par vous)
+    questionIntitules: {
+        q1: "Comment recueillir le besoin ?",
+        q2: "Quelles sont les solutions techniques ?",
+        q3: "Qui sont les parties prenantes ?",
+        q4: "Quel est l'impact du projet ?"
+    }
+};
+
+
+// =================================================================
 // 1. Fonctions Globales (Appelées par onclick dans admin.html)
 // =================================================================
+// ... (Fonctions toggleFullscreen, handleResponseNavigation, handleManualNavigation inchangées) ...
 
 window.toggleFullscreen = function() {
     const elem = document.documentElement; 
@@ -88,7 +109,6 @@ function getDiapoImageUrl(index) {
 
 /**
  * Effectue la requête BD et construit le tableau de slides dans l'ordre désiré.
- * Ordre: D1-D7 -> Réponses BD (Zone 1 & 2) -> D8-D11
  */
 async function generateSlideDefinitions() {
     if (typeof supabase === 'undefined' || supabase === null) {
@@ -98,7 +118,7 @@ async function generateSlideDefinitions() {
     slideDefinitions = []; 
     rawData = {}; 
 
-    // --- ÉTAPE 1: RÉCUPÉRATION ET TRAITEMENT DES DONNÉES ---
+    // --- ÉTAPE 1: RÉCUPÉRATION ET TRAITEMENT DES DONNÉES (inchangé) ---
     const { data: responses, error } = await supabase
         .from('reponses')
         .select('zone, question, reponse')
@@ -118,7 +138,7 @@ async function generateSlideDefinitions() {
     }, {});
 
 
-    // --- ÉTAPE 2: CONSTRUCTION DU FLUX DE SLIDES ---
+    // --- ÉTAPE 2: CONSTRUCTION DU FLUX DE SLIDES (inchangé) ---
     
     // A) AJOUT DES SLIDES IMAGES 1d à 7d
     for (let i = 1; i <= 7; i++) {
@@ -177,10 +197,12 @@ function generateSlideHTML(slideDef) {
     const { type, id, zone, question } = slideDef;
     
     if (type === 'separator') {
-        return `<div class="slide-item"><div class="separator">Situation ${zone}</div></div>`;
+        // Utilise l'intitulé de la zone
+        const zoneName = PRESENTATION_CONFIG.zoneNames[zone] || `Situation ${zone}`;
+        return `<div class="slide-item"><div class="separator">${zoneName}</div></div>`;
     }
     
-    // GESTION DU TYPE IMAGE: L'attribut alt est vide et pas de balise <p> de description
+    // GESTION DU TYPE IMAGE (inchangé)
     if (type === 'image') {
         return `
             <div class="slide-item is-image-slide">
@@ -196,9 +218,16 @@ function generateSlideHTML(slideDef) {
         const totalResponses = data.length;
         const responseToShowIndex = currentIdx - 1;
 
+        // --- NOUVEAU: Récupération des intitulés ---
+        const zoneName = PRESENTATION_CONFIG.zoneNames[zone] || `Situation ${zone}`;
+        const questionIntitule = PRESENTATION_CONFIG.questionIntitules[question] || `Question ${question}`;
+
+        // --- NOUVEAU: Titre Formaté ---
+        const formattedTitle = `${zoneName} - ${questionIntitule}`;
+
         let content = `
             <div style="max-height:90%; overflow-y:auto;">
-                <h2>Zone ${zone} - Question ${question}</h2>
+                <h2>${formattedTitle}</h2>
                 <hr style="color: #000;">
         `;
         
@@ -219,7 +248,7 @@ function generateSlideHTML(slideDef) {
         
         content += `</div>`;
         
-        // Boutons de navigation des réponses
+        // Boutons de navigation des réponses (inchangé)
         content += `<div style="margin-top: 30px;">`;
 
         if (currentIdx > 1) {
@@ -229,7 +258,7 @@ function generateSlideHTML(slideDef) {
         if (currentIdx < totalResponses) {
             content += `<button class="btn btn-success" onclick="handleResponseNavigation('${key}', 1)">Afficher Réponse ${currentIdx + 1}/${totalResponses}</button>`;
         } else {
-            content += `<p class="text-success mt-2" style="font-weight: bold;">Les ${totalResponses} réponses sont affichées.</p>`;
+            content += `<p class="text-success mt-2" style="font-weight: bold;">Toutes les ${totalResponses} réponses affichées.</p>`;
         }
 
         content += `</div>`;
@@ -272,7 +301,7 @@ function navigateSlide(direction) {
 
 
 // =================================================================
-// 3. INITIALISATION DE L'APPLICATION
+// 3. INITIALISATION DE L'APPLICATION (inchangé)
 // =================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
