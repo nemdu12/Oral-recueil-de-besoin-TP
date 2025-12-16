@@ -5,7 +5,9 @@
 const SUPABASE_URL = 'https://qokkovegsxandxycmfru.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFva2tvdmVnc3hhbmR4eWNtZnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1Mjk5MzYsImV4cCI6MjA4MDEwNTkzNn0.4phiYXXCGDlU9MSqXMGp2yN_eMNx_D1NGlSrtEefqPQ'; 
 
-let supabase; 
+// On utilise un nom différent pour éviter le conflit "already declared"
+let supabaseClient; 
+
 let slideDefinitions = [];
 let currentSlide = 0;
 let currentResponseIndex = {};
@@ -15,35 +17,29 @@ const zones = [1, 2];
 const questions = ["q1","q2","q3","q4"];
 const TRANSITION_DURATION_MS = 500; 
 
-// Dossier et format de fichier pour les images de diapositives
 const DIAPO_FOLDER = 'diapos';
 const DIAPO_FILE_EXTENSION = '.jpg'; 
 
-
 // =================================================================
-// NOUVEAU: MAPPING DES INTITULÉS POUR LA PRÉSENTATION
+// MAPPING DES INTITULÉS POUR LA PRÉSENTATION
 // =================================================================
 
 const PRESENTATION_CONFIG = {
-    // Intitulés des zones
     zoneNames: {
         1: "Première situation",
         2: "Deuxième situation"
     },
-    // Intitulés complets des questions (à adapter par vous)
     questionIntitules: {
-        q1: "Qu'auriez-vous fait à la place ?",
-        q2: "Quel élément positif / négatif avez-vous remarqué dans la scène ?",
-        q3: "Comment faire pour éviter cette situation ?",
-        q4: "Quels éléments de cette situation pouvez-vous corréler avec des événements vécus en SAE / travaux de groupe ?"
+        q1: "Comment recueillir le besoin ?",
+        q2: "Quelles sont les solutions techniques ?",
+        q3: "Qui sont les parties prenantes ?",
+        q4: "Quel est l'impact du projet ?"
     }
 };
 
-
 // =================================================================
-// 1. Fonctions Globales (Appelées par onclick dans admin.html)
+// 1. Fonctions Globales
 // =================================================================
-// ... (Fonctions toggleFullscreen, handleResponseNavigation, handleManualNavigation inchangées) ...
 
 window.toggleFullscreen = function() {
     const elem = document.documentElement; 
@@ -51,82 +47,56 @@ window.toggleFullscreen = function() {
     else elem.exitFullscreen();
 }
 
-/**
- * Gère la navigation entre les différentes réponses pour une même question.
- */
 window.handleResponseNavigation = function(key, direction) {
     if (currentResponseIndex[key] === undefined) return;
-    
     const totalResponses = rawData[key].length;
     let newIndex = currentResponseIndex[key] + direction;
-
     if (newIndex >= 0 && newIndex <= totalResponses) {
         currentResponseIndex[key] = newIndex;
         displayCurrentSlide();
     }
 }
 
-/**
- * Gère la navigation entre les slides (boutons Précédent/Suivant).
- */
 window.handleManualNavigation = async function(direction) {
     await generateSlideDefinitions(); 
     navigateSlide(direction);
 }
 
-
 // =================================================================
-// 2. Fonctions Internes (Logique de l'application)
+// 2. Fonctions Internes
 // =================================================================
 
-/**
- * Met à jour la largeur de la barre de progression en bas de l'écran.
- */
 function updateProgressBar() {
     const progressBar = document.getElementById('progress-bar');
     if (!progressBar) return;
-
     const totalSlides = slideDefinitions.length;
-
     if (totalSlides === 0) {
         progressBar.style.width = '0%';
         return;
     }
-
     const progressPercent = ((currentSlide + 1) / totalSlides) * 100;
-    
     progressBar.style.width = `${progressPercent}%`;
 }
 
-
-/**
- * Construit l'URL complète pour une diapositive image (ex: diapos/diapo1.jpg).
- */
 function getDiapoImageUrl(index) {
     return `${DIAPO_FOLDER}/diapo${index}${DIAPO_FILE_EXTENSION}`;
 }
 
-
-/**
- * Effectue la requête BD et construit le tableau de slides dans l'ordre désiré.
- */
 async function generateSlideDefinitions() {
-    if (typeof supabase === 'undefined' || supabase === null) {
-         return;
-    }
+    // On vérifie que le client est bien initialisé
+    if (!supabaseClient) return;
 
     slideDefinitions = []; 
     rawData = {}; 
 
-    // --- ÉTAPE 1: RÉCUPÉRATION ET TRAITEMENT DES DONNÉES (inchangé) ---
-    const { data: responses, error } = await supabase
+    // --- ÉTAPE 1: RÉCUPÉRATION DES DONNÉES ---
+    const { data: responses, error } = await supabaseClient
         .from('reponses')
         .select('zone, question, reponse')
         .order('created_at', { ascending: true });
 
     if (error) {
         console.error('Erreur Supabase :', error);
-        document.getElementById("diapo-content").innerHTML = `<div class="slide-item"><h1>Erreur de BD: ${error.message}</h1></div>`;
         return;
     }
     
@@ -137,78 +107,43 @@ async function generateSlideDefinitions() {
         return acc;
     }, {});
 
-
-    // --- ÉTAPE 2: CONSTRUCTION DU FLUX DE SLIDES (inchangé) ---
+    // --- ÉTAPE 2: CONSTRUCTION ---
     
-    // A) AJOUT DES SLIDES IMAGES 1d à 7d
     for (let i = 1; i <= 7; i++) {
-        slideDefinitions.push({ 
-            type: 'image', 
-            id: `diapo-${i}`, 
-            url: getDiapoImageUrl(i), 
-            description: `Slide d'introduction ${i}` 
-        });
+        slideDefinitions.push({ type: 'image', id: `diapo-${i}`, url: getDiapoImageUrl(i) });
     }
 
-    // B) AJOUT DES SLIDES DE RÉPONSES (r)
     zones.forEach(zone => {
-        // Séparateur de Zone (Ex: Situation 1)
         slideDefinitions.push({ type: 'separator', id: `sep_${zone}`, zone: zone });
-
         questions.forEach(q => {
             const key = `${zone}_${q}`;
             const data = groupedResponses[key] || []; 
-            
             rawData[key] = data; 
-            
-            if (rawData[key].length > 0) {
-                // Ajout de la slide de question si des réponses existent
-                if (currentResponseIndex[key] === undefined) {
-                    currentResponseIndex[key] = 0; 
-                }
+            if (data.length > 0) {
+                if (currentResponseIndex[key] === undefined) currentResponseIndex[key] = 0;
                 slideDefinitions.push({ type: 'question', id: key, zone: zone, question: q });
             }
         });
     });
 
-    // C) AJOUT DES SLIDES IMAGES 8d à 11d
     for (let i = 8; i <= 11; i++) {
-        slideDefinitions.push({ 
-            type: 'image', 
-            id: `diapo-${i}`, 
-            url: getDiapoImageUrl(i), 
-            description: `Slide de conclusion ${i}` 
-        });
+        slideDefinitions.push({ type: 'image', id: `diapo-${i}`, url: getDiapoImageUrl(i) });
     }
-    
-    // --- FIN DE LA CONSTRUCTION ---
 
-    if (currentSlide >= slideDefinitions.length) {
-        currentSlide = 0;
-    }
-    
+    if (currentSlide >= slideDefinitions.length) currentSlide = 0;
     updateProgressBar();
 }
 
-/**
- * Génère le HTML pour une slide donnée, en fonction de son type.
- */
 function generateSlideHTML(slideDef) {
     const { type, id, zone, question } = slideDef;
     
     if (type === 'separator') {
-        // Utilise l'intitulé de la zone
         const zoneName = PRESENTATION_CONFIG.zoneNames[zone] || `Situation ${zone}`;
         return `<div class="slide-item"><div class="separator">${zoneName}</div></div>`;
     }
     
-    // GESTION DU TYPE IMAGE (inchangé)
     if (type === 'image') {
-        return `
-            <div class="slide-item is-image-slide">
-                <img src="${slideDef.url}" alt="" class="full-screen-image">
-            </div>
-        `;
+        return `<div class="slide-item is-image-slide"><img src="${slideDef.url}" alt="" class="full-screen-image"></div>`;
     }
     
     if (type === 'question') {
@@ -218,70 +153,36 @@ function generateSlideHTML(slideDef) {
         const totalResponses = data.length;
         const responseToShowIndex = currentIdx - 1;
 
-        // --- NOUVEAU: Récupération des intitulés ---
         const zoneName = PRESENTATION_CONFIG.zoneNames[zone] || `Situation ${zone}`;
         const questionIntitule = PRESENTATION_CONFIG.questionIntitules[question] || `Question ${question}`;
 
-        // --- NOUVEAU: Titre Formaté ---
-        const formattedTitle = `${zoneName} - ${questionIntitule}`;
-
-        let content = `
-            <div style="max-height:90%; overflow-y:auto;">
-                <h2>${formattedTitle}</h2>
-                <hr style="color: #000;">
-        `;
+        let content = `<div style="max-height:90%; overflow-y:auto;">
+                <h2>${zoneName} - ${questionIntitule}</h2>
+                <hr style="color: #000;">`;
         
-        // Affichage de la réponse en cours
         if (currentIdx > 0 && responseToShowIndex < totalResponses) {
-            content += `<p style="font-weight: bold;">
-                            ${currentIdx.toLocaleString()}. ${data[responseToShowIndex]}
-                        </p>`;
-        } else if (currentIdx === 0 && totalResponses > 0) {
-            content += `<p style="font-style: italic; color: #555;">
-                            Cliquez sur "Afficher Réponse" pour commencer.
-                        </p>`;
-        } else if (totalResponses === 0) {
-            content += `<p style="font-style: italic; color: #555;">
-                            Aucune réponse enregistrée pour cette question.
-                        </p>`;
-        }
-        
-        content += `</div>`;
-        
-        // Boutons de navigation des réponses (inchangé)
-        content += `<div style="margin-top: 30px;">`;
-
-        if (currentIdx > 1) {
-            content += `<button class="btn btn-warning me-3" onclick="handleResponseNavigation('${key}', -1)">Réponse Précédente</button>`;
-        }
-        
-        if (currentIdx < totalResponses) {
-            content += `<button class="btn btn-success" onclick="handleResponseNavigation('${key}', 1)">Afficher Réponse ${currentIdx + 1}/${totalResponses}</button>`;
+            content += `<p style="font-weight: bold;">${currentIdx}. ${data[responseToShowIndex]}</p>`;
         } else {
-            content += `<p class="text-success mt-2" style="font-weight: bold;">Toutes les ${totalResponses} réponses affichées.</p>`;
+            content += `<p style="font-style: italic; color: #555;">Cliquez sur "Afficher Réponse" pour commencer.</p>`;
         }
-
+        
+        content += `</div><div style="margin-top: 30px;">`;
+        if (currentIdx > 1) content += `<button class="btn btn-warning me-3" onclick="handleResponseNavigation('${key}', -1)">Précédent</button>`;
+        if (currentIdx < totalResponses) content += `<button class="btn btn-success" onclick="handleResponseNavigation('${key}', 1)">Afficher Réponse ${currentIdx + 1}/${totalResponses}</button>`;
         content += `</div>`;
         
         return `<div class="slide-item">${content}</div>`;
     }
-    
-    return `<div class="slide-item"><h1>Erreur de type de slide.</h1></div>`;
+    return `<div class="slide-item"><h1>Erreur</h1></div>`;
 }
 
-/**
- * Gère l'affichage de la slide actuelle et les animations.
- */
 function displayCurrentSlide() {
     const contentContainer = document.getElementById("diapo-content");
-    
     if (slideDefinitions.length === 0) {
-        contentContainer.innerHTML = `<div class="slide-item"><h1>[Aucune donnée disponible]</h1></div>`;
+        contentContainer.innerHTML = `<div class="slide-item"><h1>Chargement...</h1></div>`;
         return;
     }
-    
     contentContainer.style.opacity = 0; 
-    
     setTimeout(() => {
         contentContainer.innerHTML = generateSlideHTML(slideDefinitions[currentSlide]);
         contentContainer.style.opacity = 1;
@@ -289,43 +190,33 @@ function displayCurrentSlide() {
     }, TRANSITION_DURATION_MS); 
 }
 
-/**
- * Avance ou recule l'index de la slide dans la liste complète.
- */
 function navigateSlide(direction) {
     if (slideDefinitions.length === 0) return;
-    
     currentSlide = (currentSlide + direction + slideDefinitions.length) % slideDefinitions.length;
     displayCurrentSlide();
 }
 
-
 // =================================================================
-// 3. INITIALISATION DE L'APPLICATION (inchangé)
+// 3. INITIALISATION
 // =================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- Vérification et Initialisation de Supabase ---
-    if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
+    // window.supabase est fourni par le script CDN dans admin.html
+    if (typeof window.supabase !== 'undefined') {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
     } else {
-        document.getElementById("diapo-content").innerHTML = `<div class="slide-item"><h1>ERREUR FATALE: Librairie Supabase introuvable.</h1><p>Vérifiez votre connexion et le lien CDN dans admin.html.</p></div>`;
+        console.error("SDK Supabase introuvable");
         return;
     }
 
-    // --- Vérification d'Authentification (Sécurité) ---
     if (sessionStorage.getItem('isAdmin') !== 'true') {
         window.location.href = "admin-login.html";
         return;
     }
-    sessionStorage.removeItem('isAdmin'); 
 
-    // --- Démarrage ---
-    async function initializeAdmin() {
+    async function start() {
         await generateSlideDefinitions(); 
         displayCurrentSlide();
     }
-    initializeAdmin();
-
+    start();
 });
